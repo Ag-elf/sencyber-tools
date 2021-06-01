@@ -5,6 +5,3 @@
 # @File     : test.py
 # @Version  : Python 3.8.5 +
 
-from sencyber import demo
-
-demo.running()
