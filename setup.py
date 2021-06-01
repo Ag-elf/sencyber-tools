@@ -18,9 +18,9 @@ setuptools.setup(
     description="Sencyber Tools",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/Ag-elf/sencyber-tools",
     project_urls={
-        "Bug Tracker": "https://github.com/pypa/sampleproject/issues",
+        "Bug Tracker": "https://github.com/Ag-elf/sencyber-tools/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
