@@ -11,10 +11,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="sencyber-tools-minjie96",
+    name="sencyber-tools",
     version="0.0.1",
-    author="minjie96",
-    author_email="minjie96@sencyber.cn",
+    author="shigure_hotaru",
+    author_email="lrscct@gmail.com",
     description="Sencyber Tools",
     long_description=long_description,
     long_description_content_type="text/markdown",
