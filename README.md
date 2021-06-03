@@ -10,6 +10,10 @@ sencyberApps
         --> radians         :function
         --> heading         :function
         --> distance        :function
+>>> .simulator
+    ==> connection
+    ==> gui
+    ==> rawData
 ==> demo
     --> running             :function
 ==> tools

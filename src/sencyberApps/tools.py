@@ -6,9 +6,9 @@
 # @Version  : Python 3.8.5 +
 
 import math
-import json
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Callable
 
 
 class PositionAHRS:
@@ -102,7 +102,7 @@ class PositionAHRS:
 
 
 class ConcurrentHandler:
-    def __init__(self, max_workers: int, call_back):
+    def __init__(self, max_workers: int, call_back: Callable):
         self.__threadPool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="sencyber")
         self.__call_back = call_back
 
@@ -128,5 +128,32 @@ class ConcurrentHandler:
         for f in self.__future_list:
             result.append(f.result())
         return result
+
+
+def a_to_hex(val: int) -> str:
+    if val < 10:
+        return str(val)
+    elif val == 10:
+        return 'A'
+    elif val == 11:
+        return 'B'
+    elif val == 12:
+        return 'C'
+    elif val == 13:
+        return 'D'
+    elif val == 14:
+        return 'E'
+    elif val == 15:
+        return 'F'
+
+
+def hex_to_str(payload: bytes) -> str:
+    raw = ""
+    for d in payload:
+        ten = a_to_hex(d // 16)
+        one = a_to_hex(d % 16)
+        raw = raw + ten + one + " "
+
+    return raw
 
 

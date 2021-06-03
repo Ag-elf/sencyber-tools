@@ -9,10 +9,16 @@ import setuptools
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+with open("requirements.txt", "r", encoding="utf-8") as rq:
+    rqm = rq.read().strip()
+
+reqs = rqm.split('\n')
+
+reqs_list = [k.split('==')[0] for k in reqs]
 
 setuptools.setup(
     name="sencyber-tools",
-    version="0.0.3",
+    version="0.0.4",
     author="shigure_hotaru",
     author_email="lrscct@gmail.com",
     description="Sencyber Tools",
@@ -29,6 +35,6 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
-    install_requires=['oss2', 'cassandra_driver'],
+    install_requires=reqs_list,
     python_requires=">=3.8",
 )
