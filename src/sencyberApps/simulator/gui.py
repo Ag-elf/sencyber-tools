@@ -6,13 +6,13 @@
 # @Version  : Python 3.8.5 +
 import math
 import time
-import rawData
 
 from dearpygui.core import *
 from dearpygui.simple import *
 
 from threading import Thread
 from connection import Connection
+import sencyberApps.simulator.rawData as rawData
 
 
 class TestGui:

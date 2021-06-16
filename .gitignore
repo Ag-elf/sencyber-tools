@@ -141,6 +141,8 @@ device_name.txt
 dict.txt
 temp.txt
 secret.txt
+try.py
+tt.py
 
 # Ignore Some folders
 .idea

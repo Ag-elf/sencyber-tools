@@ -4,10 +4,19 @@
 # @Email    : minjie96@sencyber.cn
 # @File     : tools.py
 # @Version  : Python 3.8.5 +
-
+import json
 import math
+import os
+import socket
+import logging
+import struct
 import time
+import traceback
+
 from concurrent.futures import ThreadPoolExecutor
+
+from queue import Queue
+from threading import Lock, Thread
 from typing import Callable
 
 
@@ -128,6 +137,217 @@ class ConcurrentHandler:
         for f in self.__future_list:
             result.append(f.result())
         return result
+
+
+# Auto Queue, Get if Full
+class AutoQueue:
+    # Initializing
+    def __init__(self, length: int):
+        self.queue = Queue()
+        self.length = length
+
+    def __str__(self):
+        raw = ""
+        for item in self.queue.queue:
+            raw += "&,&"
+            raw += item
+        return raw
+
+    def put(self, item):
+        """
+        This function is called when you want to put an item into the queue
+        :param item: item, can be anything you want
+        :return:
+        """
+        self.queue.put(item)
+        if self.queue.qsize() > self.length:
+            self.queue.get()
+
+    def get(self):
+        """
+        This function is used to get the item in the queue. (Item consumed when calling the function)
+        :return:
+        """
+        item = self.queue.get()
+        return item
+
+    def clean(self):
+        """
+        Clean the queue
+        :return:
+        """
+        self.queue.queue.clear()
+
+    def getQueue(self):
+        """
+        Get the actual list of items for the queue.
+        :return:
+        """
+        return self.queue.queue
+
+    def isFull(self):
+        return self.queue.full()
+
+
+class SencyberLogger:
+    def __init__(self, receiver_address='0.0.0.0', receiver_port=10080, title='default'):
+        self.receiver_address = receiver_address
+        self.receiver_port = receiver_port
+        self.title = title
+        self.time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+
+        self.file_name = f'{self.time}_{title}'
+        self.__running = 1
+        self.__lock = Lock()
+
+        LOG_FORMAT = "%(asctime)s [%(levelname)s]: %(message)s @ [%(module)s-%(lineno)s]"
+        logging.basicConfig(
+            filename=f"{self.file_name}.log",
+            level=logging.DEBUG,
+            format=LOG_FORMAT
+        )
+        self.__thread = Thread(target=self.__backUp)
+        self.__thread.start()
+        logging.info(f"{self.title} Logger Initialization Complete.")
+
+    def sendLogging(self):
+        logging.debug(f"Prepare to send logs...")
+        if self.receiver_address == "0.0.0.0":
+            logging.warning(f"Server address is not specified, logs will not be uploaded.")
+            return
+        for i in range(5):
+            logging.debug(f"Try to upload logs to server {self.receiver_address}:{self.receiver_port}")
+            state = self.__send_logs()
+            if state == 0:
+                break
+
+    def __send_logs(self):
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect((self.receiver_address, self.receiver_port))
+
+            client.settimeout(10)
+            client.send(b"\x55\xAASTT\xED")
+            dat = client.recv(10)
+            if dat == b"\x55\xAARCV\xED":
+                file_path = f"{self.file_name}.log"
+                if not os.path.exists(file_path):
+                    logging.error(f"{file_path} Not Exist")
+                    return 1
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    date = f.read()
+                    size = len(date)
+
+                header = {
+                    'file_name': self.title,
+                    'length': size,
+                    'stt_time': self.time
+                }
+                header_json = json.dumps(header)
+                header_bytes = header_json.encode('utf-8')
+
+                s_header = struct.pack('i', len(header_bytes))
+
+                client.send(s_header)
+                client.send(header_bytes)
+                client.send(date.encode('utf-8'))
+            else:
+                logging.error(f"{self.receiver_address}:{self.receiver_port} is not a proper log server.")
+                return 1
+        except ConnectionResetError:
+            logging.error(f"Connection Reset By Peer.")
+            return 1
+        except TimeoutError:
+            logging.error(f"Connection Time Out.")
+            return 1
+        except Exception:
+            logging.error(f"Unhandled Exception Occurred: {traceback.format_exc()}")
+            return 1
+        return 0
+
+    def __backUp(self):
+        counter = 0
+        while self.__running == 1:
+            time.sleep(1)
+            counter += 1
+            if counter == 60:
+                self.__lock.acquire()
+                logging.debug(f"Backup logs...")
+                self.sendLogging()
+                self.__lock.release()
+                counter = 0
+
+    def end(self):
+        logging.info("End Logging...")
+        self.__running = 0
+        self.__lock.acquire()
+        self.sendLogging()
+        self.__lock.release()
+
+
+class SencyberLoggerReceiver:
+    def __init__(self, bind_address="0.0.0.0", bind_port=10080, path="./"):
+        LOG_FORMAT = "%(asctime)s [%(levelname)s]: %(message)s @ [%(module)s-%(lineno)s]"
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format=LOG_FORMAT
+        )
+        self.__path = path
+        self.__bind_address = bind_address
+        self.__bind_port = bind_port
+        self.__server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__server.bind((self.__bind_address, self.__bind_port))
+        self.__server.listen(50)
+        self.__threadPool = ThreadPoolExecutor(max_workers=50, thread_name_prefix="sencyber")
+        self.__lock = Lock()
+        logging.info("Sencyber Logger Receiver Start")
+
+    def start(self):
+        while True:
+            conn, address = self.__server.accept()
+            self.__threadPool.submit(self.__handle, conn=conn, address=address)
+
+    def __handle(self, conn: socket, address):
+        try:
+            data = conn.recv(6)
+            if data == b"\x55\xAASTT\xED":
+                self.__lock.acquire()
+                self.__lock.release()
+                conn.send(b"\x55\xAARCV\xED")
+
+                s_header = conn.recv(4)
+                s_header = struct.unpack('i', s_header)[0]
+
+                b_header = conn.recv(s_header)
+
+                json_header = b_header.decode('utf-8')
+                header = json.loads(json_header)
+
+                file_size = header['length']
+                stt_time = header['stt_time']
+                file_name = f"{stt_time}_{header['file_name']}_RCV.log"
+
+                logging.info(f"{file_name} Saving Incoming Logs...")
+
+                res = b""
+                size = 0
+                while size < file_size:
+                    data = conn.recv(2048)
+                    size += len(data)
+                    res += data
+
+                with open(self.__path + file_name, 'w+') as f:
+                    f.write(res.decode(encoding="utf-8"))
+
+                logging.info(f"{file_name} Saved Successfully!!")
+
+        except Exception:
+            logging.error("=" * 50)
+            logging.error("Exception!!")
+            logging.error(traceback.format_exc())
+            logging.error("=" * 50)
+            return
+        return
 
 
 def a_to_hex(val: int) -> str:
