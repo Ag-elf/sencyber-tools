@@ -190,11 +190,12 @@ class AutoQueue:
 
 
 class SencyberLogger:
-    def __init__(self, receiver_address='0.0.0.0', receiver_port=10080, title='default'):
+    def __init__(self, receiver_address='0.0.0.0', receiver_port=10080, title='default', auto_interval=1200):
         self.receiver_address = receiver_address
         self.receiver_port = receiver_port
         self.title = title
         self.time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+        self.auto_interval = auto_interval
 
         self.file_name = f'{self.time}_{title}'
         self.__running = 1
@@ -204,8 +205,11 @@ class SencyberLogger:
         logging.basicConfig(
             filename=f"{self.file_name}.log",
             level=logging.DEBUG,
-            format=LOG_FORMAT
+            format=LOG_FORMAT,
         )
+
+        logging.FileHandler(filename=f"{self.file_name}.log", encoding="utf-8")
+
         self.__thread = Thread(target=self.__backUp)
         self.__thread.start()
         logging.info(f"{self.title} Logger Initialization Complete.")
@@ -234,9 +238,10 @@ class SencyberLogger:
                 if not os.path.exists(file_path):
                     logging.error(f"{file_path} Not Exist")
                     return 1
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    date = f.read()
-                    size = len(date)
+                with open(file_path, 'r') as f:
+                    data = f.read().encode(encoding="utf-8")
+                    # print(date)
+                    size = len(data)
 
                 header = {
                     'file_name': self.title,
@@ -250,7 +255,7 @@ class SencyberLogger:
 
                 client.send(s_header)
                 client.send(header_bytes)
-                client.send(date.encode('utf-8'))
+                client.send(data)
             else:
                 logging.error(f"{self.receiver_address}:{self.receiver_port} is not a proper log server.")
                 return 1
@@ -270,7 +275,7 @@ class SencyberLogger:
         while self.__running == 1:
             time.sleep(1)
             counter += 1
-            if counter == 60:
+            if counter == self.auto_interval:
                 self.__lock.acquire()
                 logging.debug(f"Backup logs...")
                 self.sendLogging()
@@ -337,7 +342,12 @@ class SencyberLoggerReceiver:
                     res += data
 
                 with open(self.__path + file_name, 'w+') as f:
-                    f.write(res.decode(encoding="utf-8"))
+                    res = res.replace(b"\r\n", b"\n")
+                    # print(res[500:590])
+                    # print(res)
+                    pp = res.decode(encoding="utf-8", errors="ignore").strip()
+                    # print(pp)
+                    f.write(pp)
 
                 logging.info(f"{file_name} Saved Successfully!!")
 
@@ -346,7 +356,8 @@ class SencyberLoggerReceiver:
             logging.error("Exception!!")
             logging.error(traceback.format_exc())
             logging.error("=" * 50)
-            return
+
+        conn.close()
         return
 
 

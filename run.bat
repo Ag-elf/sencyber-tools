@@ -1,3 +1,3 @@
 @echo off
-python -m build
-twine upload dist/*
+rmdir -S build
+rmdir -S dist
