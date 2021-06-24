@@ -226,8 +226,8 @@ class SencyberLogger:
                 break
 
     def __send_logs(self):
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.connect((self.receiver_address, self.receiver_port))
 
             client.settimeout(10)
@@ -268,6 +268,8 @@ class SencyberLogger:
         except Exception:
             logging.error(f"Unhandled Exception Occurred: {traceback.format_exc()}")
             return 1
+        finally:
+            client.close()
         return 0
 
     def __backUp(self):
