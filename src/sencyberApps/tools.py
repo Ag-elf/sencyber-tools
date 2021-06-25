@@ -21,6 +21,9 @@ from typing import Callable
 
 
 class PositionAHRS:
+    """
+    Position AHRS
+    """
     def __init__(self):
         self.beta = 0
         self.pi = 0
@@ -111,6 +114,9 @@ class PositionAHRS:
 
 
 class ConcurrentHandler:
+    """
+    Defined Concurrent Process Handler
+    """
     def __init__(self, max_workers: int, call_back: Callable):
         self.__threadPool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="sencyber")
         self.__call_back = call_back
@@ -190,6 +196,9 @@ class AutoQueue:
 
 
 class SencyberLogger:
+    """
+    Defines a Logger using default python logger and send the logs to specific server
+    """
     def __init__(self, receiver_address='0.0.0.0', receiver_port=10080, title='default', auto_interval=1200):
         self.receiver_address = receiver_address
         self.receiver_port = receiver_port
@@ -293,6 +302,9 @@ class SencyberLogger:
 
 
 class SencyberLoggerReceiver:
+    """
+    Defines a Server For receiving the logs
+    """
     def __init__(self, bind_address="0.0.0.0", bind_port=10080, path="./"):
         LOG_FORMAT = "%(asctime)s [%(levelname)s]: %(message)s @ [%(module)s-%(lineno)s]"
         logging.basicConfig(
@@ -364,6 +376,12 @@ class SencyberLoggerReceiver:
 
 
 def a_to_hex(val: int) -> str:
+    """
+
+    :param val: 0 ~ 15
+    :return:
+    """
+
     if val < 10:
         return str(val)
     elif val == 10:
@@ -381,6 +399,11 @@ def a_to_hex(val: int) -> str:
 
 
 def hex_to_str(payload: bytes) -> str:
+    """
+    Make the payload into human readable string
+    :param payload: bytes
+    :return: string
+    """
     raw = ""
     for d in payload:
         ten = a_to_hex(d // 16)
@@ -390,3 +413,31 @@ def hex_to_str(payload: bytes) -> str:
     return raw
 
 
+def angle_changing(acc: tuple, alpha: float, beta: float, theta: float) -> tuple:
+    """
+    Adjust acc by euler angles (radians).
+    :param acc: acc_x, acc_y, acc_z
+    :param alpha:
+    :param beta:
+    :param theta:
+    :return: adjusted acc
+    """
+    # theta -> beta -> alpha
+
+    x, y, z = acc
+
+    z1 = z
+    x1 = x * math.cos(theta) - y * math.sin(theta)
+    y1 = x * math.sin(theta) - y * math.cos(theta)
+
+    z2 = z1 * math.cos(beta) - x1 * math.sin(beta)
+    x2 = x1 * math.cos(beta) + z1 * math.sin(beta)
+    y2 = y1
+
+    z3 = z2 * math.cos(alpha) + y2 * math.sin(alpha)
+    y3 = y2 * math.cos(alpha) - z2 * math.sin(alpha)
+    x3 = x2
+
+    y3 = -y3
+
+    return x3, y3, z3
