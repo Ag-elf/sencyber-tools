@@ -245,7 +245,7 @@ class SencyberLogger:
             client.settimeout(10)
             client.send(b"\x55\xAASTT\xED")
             dat = client.recv(6)
-            logging.log(f"Recv: {dat}")
+            logging.debug(f"Recv: {dat}")
             if dat == b"\x55\xAARCV\xED":
                 file_path = f"{self.file_name}.log"
                 if not os.path.exists(file_path):
@@ -269,7 +269,25 @@ class SencyberLogger:
 
                 client.send(s_header)
                 client.send(header_bytes)
-                client.send(data)
+
+                dat = client.recv(1)
+
+                if dat != b"\x55":
+                    raise Exception
+
+                for i in range(len(data) // 4096 + 1):
+                    if (i + 1) * 4096 < len(data):
+                        client.send(data[4096 * i: 4096 * (i + 1)])
+                        dat = client.recv(1)
+                        if dat != b"\x55":
+                            logging.error("Protocol Error!")
+                            raise Exception
+                    else:
+                        client.send(data[4096 * i: len(data)])
+                        dat = client.recv(1)
+                        if dat != b"\x55":
+                            logging.error("Protocol Error!")
+                            raise Exception
                 client.close()
             else:
                 logging.error(f"{self.receiver_address}:{self.receiver_port} is not a proper log server.")
@@ -349,7 +367,6 @@ class SencyberLoggerReceiver:
                 conn.settimeout(10)
                 s_header = conn.recv(4)
                 s_header = struct.unpack('i', s_header)[0]
-
                 b_header = conn.recv(s_header)
 
                 json_header = b_header.decode('utf-8')
@@ -363,9 +380,15 @@ class SencyberLoggerReceiver:
 
                 res = b""
                 size = 0
+
+                conn.send(b"\x55")
+
                 while size < file_size:
-                    print(f"{size} vs. {file_size}")
-                    data = conn.recv(2048)
+                    data = conn.recv(4096)
+                    if len(data) == 0:
+                        logging.debug(f"Abort By {size} / {file_size}")
+                        raise Exception
+                    conn.send(b"\x55")
                     size += len(data)
                     res += data
 
