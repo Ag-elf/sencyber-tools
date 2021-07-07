@@ -233,6 +233,9 @@ class SencyberLogger:
             state = self.__send_logs()
             if state == 0:
                 break
+            else:
+                logging.debug(f"Retry Upload...")
+                time.sleep(5)
 
     def __send_logs(self):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -241,11 +244,13 @@ class SencyberLogger:
 
             client.settimeout(10)
             client.send(b"\x55\xAASTT\xED")
-            dat = client.recv(10)
+            dat = client.recv(6)
+            logging.log(f"Recv: {dat}")
             if dat == b"\x55\xAARCV\xED":
                 file_path = f"{self.file_name}.log"
                 if not os.path.exists(file_path):
                     logging.error(f"{file_path} Not Exist")
+                    client.close()
                     return 1
                 with open(file_path, 'r') as f:
                     data = f.read().encode(encoding="utf-8")
@@ -265,20 +270,27 @@ class SencyberLogger:
                 client.send(s_header)
                 client.send(header_bytes)
                 client.send(data)
+                client.close()
             else:
                 logging.error(f"{self.receiver_address}:{self.receiver_port} is not a proper log server.")
+                client.close()
                 return 1
         except ConnectionResetError:
             logging.error(f"Connection Reset By Peer.")
+            print(f"Connection Reset By Peer.")
+            client.close()
             return 1
-        except TimeoutError:
+        except socket.timeout:
             logging.error(f"Connection Time Out.")
+            print(f"Connection Time Out.")
+            client.close()
             return 1
         except Exception:
             logging.error(f"Unhandled Exception Occurred: {traceback.format_exc()}")
-            return 1
-        finally:
+            print(f"Unhandled Exception Occurred: {traceback.format_exc()}")
             client.close()
+            return 1
+        client.close()
         return 0
 
     def __backUp(self):
@@ -328,12 +340,13 @@ class SencyberLoggerReceiver:
 
     def __handle(self, conn: socket, address):
         try:
+            conn.settimeout(10)
             data = conn.recv(6)
+            logging.debug(f"Recv: {data}")
             if data == b"\x55\xAASTT\xED":
-                self.__lock.acquire()
-                self.__lock.release()
                 conn.send(b"\x55\xAARCV\xED")
 
+                conn.settimeout(10)
                 s_header = conn.recv(4)
                 s_header = struct.unpack('i', s_header)[0]
 
@@ -351,6 +364,7 @@ class SencyberLoggerReceiver:
                 res = b""
                 size = 0
                 while size < file_size:
+                    print(f"{size} vs. {file_size}")
                     data = conn.recv(2048)
                     size += len(data)
                     res += data
@@ -364,13 +378,17 @@ class SencyberLoggerReceiver:
                     f.write(pp)
 
                 logging.info(f"{file_name} Saved Successfully!!")
+                conn.close()
 
+            else:
+                conn.close()
         except Exception:
             logging.error("=" * 50)
             logging.error("Exception!!")
             logging.error(traceback.format_exc())
             logging.error("=" * 50)
-
+            conn.close()
+        logging.info(f"[{address}] Recv Completed...")
         conn.close()
         return
 
