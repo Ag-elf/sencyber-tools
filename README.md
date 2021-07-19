@@ -1,3 +1,9 @@
+# sencyber-package
+
+自定义工具包, 便于新功能开发
+
+[gitee链接](https://gitee.com/sencyber/sencyber-tools)
+
 ```
 sencyberApps
 >>> .io
@@ -18,8 +24,11 @@ sencyberApps
 ==> tools
     --> PositionAHRS            :class
     --> ConcurrentHandler       :class
-    --> SencyberLogger          :class
-    --> SencyberLoggerReceiver  :class
+    --> SencyberLogger          :class          : v0.1.6 Update
+    --> SencyberLoggerReceiver  :class          : v0.1.6 Update
+    --> a_to_hex                :function
+    --> hex_to_str              :function
+    --> angle_changing          :function
     
 ```
 
@@ -34,4 +43,10 @@ sencyberApps
 from sencyberApps.io.connection import CassandraLoader
 from sencyberApps.io.geo import GeoPoint
 from sencyberApps.tools import ConcurrentHandler
+```
+
+
+usage:
+```shell
+pip install sencyber-tools
 ```

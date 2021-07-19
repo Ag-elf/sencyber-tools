@@ -199,7 +199,11 @@ class SencyberLogger:
     """
     Defines a Logger using default python logger and send the logs to specific server
     """
-    def __init__(self, receiver_address='0.0.0.0', receiver_port=10080, title='default', auto_interval=1200):
+    def __init__(self, receiver_address='0.0.0.0',
+                 receiver_port=10080,
+                 title='default',
+                 auto_interval=1200,
+                 level=logging.DEBUG):
         self.receiver_address = receiver_address
         self.receiver_port = receiver_port
         self.title = title
@@ -213,7 +217,7 @@ class SencyberLogger:
         LOG_FORMAT = "%(asctime)s [%(levelname)s]: %(message)s @ [%(module)s-%(lineno)s]"
         logging.basicConfig(
             filename=f"{self.file_name}.log",
-            level=logging.DEBUG,
+            level=level,
             format=LOG_FORMAT,
         )
 
