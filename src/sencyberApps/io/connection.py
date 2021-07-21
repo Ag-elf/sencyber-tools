@@ -5,11 +5,12 @@
 # @File     : connection.py
 # @Version  : Python 3.8.5 +
 import json
+import oss2
 
 from cassandra.cluster import Cluster, ResultSet
 from cassandra.auth import PlainTextAuthProvider
-from geo import GeoPoint
-import oss2
+
+from .geo import GeoPoint
 
 
 class CassandraLoader:

@@ -378,7 +378,7 @@ class SencyberLoggerReceiver:
 
                 file_size = header['length']
                 stt_time = header['stt_time']
-                file_name = f"{stt_time}_{header['file_name']}_RCV.log"
+                file_name = f"{header['file_name']}_RCV.log"
 
                 logging.info(f"{file_name} Saving Incoming Logs...")
 

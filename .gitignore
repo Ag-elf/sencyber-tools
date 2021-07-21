@@ -133,6 +133,7 @@ dmypy.json
 *.csv
 *.rar
 *.mat
+*.bat
 
 # Ignore Secret files
 __secret*
