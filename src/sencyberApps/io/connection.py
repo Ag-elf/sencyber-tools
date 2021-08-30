@@ -6,6 +6,7 @@
 # @Version  : Python 3.8.5 +
 import json
 import oss2
+import mysql.connector
 
 from cassandra.cluster import Cluster, ResultSet
 from cassandra.auth import PlainTextAuthProvider
@@ -14,14 +15,19 @@ from .geo import GeoPoint
 
 
 class CassandraLoader:
-    def __init__(self, secret_path="./secret/"):
-        file_path = secret_path + '__secret_connection.json'
-        a = jsonLoader(file_path)
-        # print(a)
+    def __init__(self, secret_path="./secret/", keys=None):
+        if keys is not None:
+            ips = keys['ip']
+            usrName = keys['username']
+            pwd = keys['password']
+        else:
+            file_path = secret_path + '__secret_connection.json'
+            a = jsonLoader(file_path)
+            # print(a)
 
-        ips = a['ip']
-        usrName = a['username']
-        pwd = a['password']
+            ips = a['ip']
+            usrName = a['username']
+            pwd = a['password']
 
         self.node_ips = ips
         self.auth_provider = PlainTextAuthProvider(username=usrName, password=pwd)
@@ -48,15 +54,21 @@ class CassandraLoader:
 
 
 class Oss2Connector:
-    def __init__(self, secret_path="../secret/"):
+    def __init__(self, secret_path="../secret/", keys=None):
+        if keys is not None:
+            AccessKeyId = keys['AccessKeyId']
+            AccessKeySecret = keys['AccessKeySecret']
+            BucketName = keys['BucketName']
+            EndPoint = keys['EndPoint']
+            pass
+        else:
+            file_path = secret_path + '__secret_aliyun_info.json'
+            a = jsonLoader(file_path)
 
-        file_path = secret_path + '__secret_aliyun_info.json'
-        a = jsonLoader(file_path)
-
-        AccessKeyId = a['AccessKeyId']
-        AccessKeySecret = a['AccessKeySecret']
-        BucketName = a['BucketName']
-        EndPoint = a['EndPoint']
+            AccessKeyId = a['AccessKeyId']
+            AccessKeySecret = a['AccessKeySecret']
+            BucketName = a['BucketName']
+            EndPoint = a['EndPoint']
 
         # access_key_id = os.getenv('OSS_TEST_ACCESS_KEY_ID', AccessKeyId)
         # access_key_secret = os.getenv('OSS_TEST_ACCESS_KEY_SECRET', AccessKeySecret)
@@ -80,6 +92,42 @@ class Oss2Connector:
             return False
 
         return True
+
+
+class MysqlConnector:
+    def __init__(self, keys):
+
+        user = keys['username']
+        passwd = keys['password']
+        host = keys['host']
+        database = keys['database']
+
+        self.cnx = mysql.connector.connect(
+            user=user,
+            password=passwd,
+            host=host,
+            database=database
+        )
+
+    def close(self):
+        self.cnx.close()
+
+
+class KeyGen:
+    __instance = None
+
+    def __init__(self, path: str):
+        with open(path, "r") as f:
+            rs = json.load(f)
+
+        self.cassandra_info = rs['Cassandra']
+        self.mysql_info = rs['Mysql']
+        self.oss2_info = rs['Oss2']
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
 
 
 def jsonLoader(path: str):

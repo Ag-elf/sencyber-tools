@@ -1,4 +1,3 @@
 oss2
-aliyun_iot_linkkit
-pandas
-cassandra_driver
+mysql-connector-python
+cassandra-driver
