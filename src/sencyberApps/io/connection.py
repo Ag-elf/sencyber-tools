@@ -17,9 +17,9 @@ from .geo import GeoPoint
 class CassandraLoader:
     def __init__(self, secret_path="./secret/", keys=None):
         if keys is not None:
-            ips = keys['ip']
-            usrName = keys['username']
-            pwd = keys['password']
+            ips = keys.cassandra['ip']
+            usrName = keys.cassandra['username']
+            pwd = keys.cassandra['password']
         else:
             file_path = secret_path + '__secret_connection.json'
             a = jsonLoader(file_path)
@@ -56,10 +56,10 @@ class CassandraLoader:
 class Oss2Connector:
     def __init__(self, secret_path="../secret/", keys=None):
         if keys is not None:
-            AccessKeyId = keys['AccessKeyId']
-            AccessKeySecret = keys['AccessKeySecret']
-            BucketName = keys['BucketName']
-            EndPoint = keys['EndPoint']
+            AccessKeyId = keys.oss2['AccessKeyId']
+            AccessKeySecret = keys.oss2['AccessKeySecret']
+            BucketName = keys.oss2['BucketName']
+            EndPoint = keys.oss2['EndPoint']
             pass
         else:
             file_path = secret_path + '__secret_aliyun_info.json'
@@ -95,12 +95,12 @@ class Oss2Connector:
 
 
 class MysqlConnector:
-    def __init__(self, keys):
+    def __init__(self, keys: 'KeyGen'):
 
-        user = keys['username']
-        passwd = keys['password']
-        host = keys['host']
-        database = keys['database']
+        user = keys.mysql['username']
+        passwd = keys.mysql['password']
+        host = keys.mysql['host']
+        database = keys.mysql['database']
 
         self.cnx = mysql.connector.connect(
             user=user,
@@ -120,9 +120,10 @@ class KeyGen:
         with open(path, "r") as f:
             rs = json.load(f)
 
-        self.cassandra_info = rs['Cassandra']
-        self.mysql_info = rs['Mysql']
-        self.oss2_info = rs['Oss2']
+        self.cassandra = rs['cassandra']
+        self.mysql = rs['mysql']
+        self.oss2 = rs['oss2']
+        self.user_defined = rs['user_defined']
 
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
