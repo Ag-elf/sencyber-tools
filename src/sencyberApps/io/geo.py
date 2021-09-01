@@ -31,6 +31,13 @@ def distance(a: 'GeoPoint', b: 'GeoPoint') -> float:
     return angle * 6378160
 
 
+# Geometry distance calculated by coordinates deltas
+def distance_value(dir_value: float) -> float:
+    a = GeoPoint(0, 0)
+    b = GeoPoint(0, dir_value)
+    return distance(a, b)
+
+
 def heading(a: 'GeoPoint', b: 'GeoPoint') -> int:
     dlon = radians(a.lon - b.lon)
     dlat = radians(a.lat - b.lat)
