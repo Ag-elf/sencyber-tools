@@ -25,6 +25,7 @@ def get_circle_by_triangle(_3points: list) -> 'Circle':
     s_b = b_x ** 2 + b_y ** 2
     s_c = c_x ** 2 + c_y ** 2
 
+    # 3 points on the same line will lead to the value to be 0
     temp = dx_ab * dy_ac - dx_ac * dy_ab
 
     D = ((s_b - s_a) * dy_ac - (s_c - s_a) * dy_ab) / temp

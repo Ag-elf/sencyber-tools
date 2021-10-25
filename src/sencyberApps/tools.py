@@ -214,14 +214,21 @@ class SencyberLogger:
         self.__running = 1
         self.__lock = Lock()
 
-        LOG_FORMAT = "%(asctime)s [%(levelname)s]: %(message)s @ [%(module)s-%(lineno)s]"
+        self.level = level
+        self.LOG_FORMAT = "%(asctime)s [%(levelname)s]: %(message)s @ [%(module)s-%(lineno)s]"
         logging.basicConfig(
-            filename=f"{self.file_name}.log",
+            # filename=f"{self.file_name}.log",
             level=level,
-            format=LOG_FORMAT,
+            format=self.LOG_FORMAT,
         )
 
-        logging.FileHandler(filename=f"{self.file_name}.log", encoding="utf-8")
+        self.__root_logger = logging.getLogger()
+
+        self.__handler = logging.FileHandler(filename=f"{self.file_name}.log", encoding="utf-8")
+        self.__handler.setFormatter(logging.Formatter(self.LOG_FORMAT))
+        self.__handler.setLevel(level)
+
+        self.__root_logger.addHandler(self.__handler)
 
         self.__thread = Thread(target=self.__backUp)
         self.__thread.start()
@@ -256,13 +263,13 @@ class SencyberLogger:
                     logging.error(f"{file_path} Not Exist")
                     client.close()
                     return 1
-                with open(file_path, 'r') as f:
+                with open(file_path, 'r', encoding="utf-8") as f:
                     data = f.read().encode(encoding="utf-8")
                     # print(date)
                     size = len(data)
 
                 header = {
-                    'file_name': self.title,
+                    'file_name': self.file_name,
                     'length': size,
                     'stt_time': self.time
                 }
@@ -317,15 +324,39 @@ class SencyberLogger:
 
     def __backUp(self):
         counter = 0
+        day_counter = 0
         while self.__running == 1:
             time.sleep(1)
             counter += 1
-            if counter == self.auto_interval:
+            day_counter += 1
+            if day_counter == 3600 * 24:
+                self.__lock.acquire()
+                logging.debug(f"Backup logs...")
+                self.sendLogging()
+
+                # TODO update log file
+                self.__refresh_file()
+                self.__lock.release()
+                counter = 0
+                day_counter = 0
+
+            elif counter == self.auto_interval:
                 self.__lock.acquire()
                 logging.debug(f"Backup logs...")
                 self.sendLogging()
                 self.__lock.release()
                 counter = 0
+
+    def __refresh_file(self):
+        time_now = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+        self.file_name = f'{time_now}_{self.title}'
+        self.__root_logger.removeHandler(self.__handler)
+        self.__handler = logging.FileHandler(filename=f"{self.file_name}.log", encoding="utf-8")
+        self.__handler.setFormatter(logging.Formatter(self.LOG_FORMAT))
+        self.__handler.setLevel(self.level)
+        self.__handler.encoding = "utf-8"
+        self.__root_logger.addHandler(self.__handler)
+        logging.info("Daily File Swaps.")
 
     def end(self):
         logging.info("End Logging...")
@@ -342,6 +373,7 @@ class SencyberLoggerReceiver:
     def __init__(self, bind_address="0.0.0.0", bind_port=10080, path="./"):
         LOG_FORMAT = "%(asctime)s [%(levelname)s]: %(message)s @ [%(module)s-%(lineno)s]"
         logging.basicConfig(
+            filename=f"logger_receiver.log",
             level=logging.DEBUG,
             format=LOG_FORMAT
         )
