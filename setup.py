@@ -18,7 +18,7 @@ reqs_list = [k.split('==')[0] for k in reqs]
 
 setuptools.setup(
     name="sencyber-tools",
-    version="0.2.0",
+    version="0.2.1",
     author="shigure_hotaru",
     author_email="lrscct@gmail.com",
     description="Sencyber Tools",
