@@ -34,8 +34,8 @@ sencyberApps
     --> PositionAHRS            :class
     --> ConcurrentHandler       :class
     --> AutoQueue               :class
-    --> SencyberLogger          :class          : v0.1.6 Update
-    --> SencyberLoggerReceiver  :class          : v0.1.6 Update
+    --> SencyberLogger          :class          : v0.2.1 Update
+    --> SencyberLoggerReceiver  :class          : v0.2.1 Update
     --> a_to_hex                :function
     --> hex_to_str              :function
     --> angle_changing          :function
