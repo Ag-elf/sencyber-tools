@@ -15,7 +15,7 @@ from .geo import GeoPoint
 
 
 class CassandraLoader:
-    def __init__(self, secret_path="./secret/", keys=None):
+    def __init__(self, secret_path="./secret/", keys=None, protocol_version=4):
         if keys is not None:
             ips = keys.cassandra['ip']
             usrName = keys.cassandra['username']
@@ -32,7 +32,7 @@ class CassandraLoader:
         self.node_ips = ips
         self.auth_provider = PlainTextAuthProvider(username=usrName, password=pwd)
 
-        self.cluster = Cluster(self.node_ips, auth_provider=self.auth_provider)
+        self.cluster = Cluster(self.node_ips, auth_provider=self.auth_provider, protocol_version=protocol_version)
 
         self.cluster.register_user_type('bohai_device_trip', 'geo_point', GeoPoint)
         self.cluster.register_user_type('sencyber_device_trip', 'geo_point', GeoPoint)
