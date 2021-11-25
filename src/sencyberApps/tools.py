@@ -402,6 +402,7 @@ class SencyberLoggerReceiver:
 
                 conn.settimeout(10)
                 s_header = conn.recv(4)
+                logging.info(f"***[s_header] is {s_header}")
                 s_header = struct.unpack('i', s_header)[0]
                 b_header = conn.recv(s_header)
 
